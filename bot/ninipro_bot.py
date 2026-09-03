@@ -236,7 +236,7 @@ I18N = {
     "fa": {
         "welcome": "👋 به ربات رسمی NiniPro خوش آمدید!\n\nلطفاً زبان خود را انتخاب کنید:",
         "lang_set": "✅ زبان فارسی تنظیم شد.",
-        "main_menu": "📋 منوی اصلی",
+        "main_menu": "📋 منوی اصلی NiniPro\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "buy": "🛒 خرید اشتراک",
         "wallet": "💰 کیف‌پول",
         "mycodes": "🎟 کدهای من",
@@ -249,7 +249,7 @@ I18N = {
         "phone_ok": "✅ شماره شما تایید شد: {phone}",
         "poll_q": "📊 کدام پروتکل را بیشتر استفاده می‌کنید؟",
         "poll_opts": ["VLESS", "VMess", "Trojan", "Hysteria2"],
-        "choose_plan": "💳 پلن مورد نظر را انتخاب کنید:",
+        "choose_plan": "💳 پلن مورد نظر را انتخاب کنید\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "plan_trial": f"🎁 تست ۷ روزه — {fmt_toman(PRICE_TRIAL) if PRICE_TRIAL else 'رایگان'}",
         "plan_pro": f"⭐ اشتراک PRO (۱ ماه) — {fmt_toman(PRICE_PRO)}",
         "plan_admin": f"👑 اشتراک نامحدود — {fmt_toman(PRICE_ADMIN)}",
@@ -258,7 +258,7 @@ I18N = {
                        "ابتدا کیف‌پول را شارژ کنید."),
         "bought": ("🎉 خرید موفق!\n\nکد اشتراک شما:\n<code>{code}</code>\n\n"
                    "در اپ NiniPro وارد کنید.\nموجودی جدید: {bal}"),
-        "wallet_menu": ("💰 کیف‌پول شما\n\nموجودی: {bal} تومان\n\n"
+        "wallet_menu": ("💰 کیف‌پول شما\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nموجودی: {bal} تومان\n\n"
                         "برای شارژ، مبلغ را انتخاب کنید (حداقل {min} تومان):"),
         "custom_amount": "✏️ مبلغ دلخواه (حداقل {min} تومان)",
         "pay_instructions": ("💳 مبلغ {amount} تومان را به کارت زیر واریز کنید:\n\n"
@@ -291,7 +291,7 @@ I18N = {
         "about_txt": ("NiniPro — پنل مدیریت پروکسی و کانفیگ تلگرام\n"
                       "کدهای اشتراک: امضای HMAC • بدون سرور • ضد جعل\n"
                       "پشتیبانی: @SasaX60"),
-        "admin_menu": "⚙️ پنل مدیریت — یک گزینه را انتخاب کنید:",
+        "admin_menu": "⚙️ پنل مدیریت NiniPro\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "a_gen_free": "➕ ساخت کد رایگان (استاندارد)",
         "a_gen_pro": "⭐ ساخت کد PRO",
         "a_gen_admin": "👑 ساخت کد ادمین",
@@ -319,7 +319,7 @@ I18N = {
     "en": {
         "welcome": "👋 Welcome to the official NiniPro bot!\n\nChoose your language:",
         "lang_set": "✅ Language set to English.",
-        "main_menu": "📋 Main menu",
+        "main_menu": "📋 NiniPro Main Menu\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "buy": "🛒 Buy subscription",
         "wallet": "💰 Wallet",
         "mycodes": "🎟 My codes",
@@ -382,7 +382,7 @@ I18N = {
     "ar": {
         "welcome": "👋 مرحبًا بك في بوت NiniPro الرسمي!\n\nاختر لغتك:",
         "lang_set": "✅ تم ضبط اللغة العربية.",
-        "main_menu": "📋 القائمة الرئيسية",
+        "main_menu": "📋 القائمة الرئيسية NiniPro\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         "buy": "🛒 شراء اشتراك",
         "wallet": "💰 المحفظة",
         "mycodes": "🎟 أكوادي",

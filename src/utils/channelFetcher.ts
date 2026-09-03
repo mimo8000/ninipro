@@ -217,10 +217,20 @@ export function getPreloadedConfigs(): ConfigItem[] {
 
 // Function to fetch from channel / remote aggregator with fallback
 export async function fetchChannelConfigs(channel: ChannelSource): Promise<{ success: boolean; configs: ConfigItem[]; error?: string }> {
+  // Fast path: use embedded real snapshot (offline, no network/CORS issues)
+  const handle = channel.handle.replace('@', '');
+  const snap = EMBEDDED_CHANNEL_SNAPSHOT[handle] || EMBEDDED_CHANNEL_SNAPSHOT[channel.id];
+  if (snap) {
+    const snapConfigs = parseBulkConfigs(snap, 'channel', channel.name);
+    if (snapConfigs.length > 0) {
+      return { success: true, configs: snapConfigs };
+    }
+  }
+
   try {
-    // Attempt fetch with timeout
+    // Attempt live fetch with short timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     const response = await fetch(channel.url, {
       signal: controller.signal,
@@ -240,29 +250,12 @@ export async function fetchChannelConfigs(channel: ChannelSource): Promise<{ suc
     if (configs.length > 0) {
       return { success: true, configs };
     }
-    
-    // Real fallback: use the embedded snapshot extracted from this channel
-    const handle = channel.handle.replace('@', '');
-    const snap = EMBEDDED_CHANNEL_SNAPSHOT[handle] || EMBEDDED_CHANNEL_SNAPSHOT[channel.id];
-    if (snap) {
-      const snapConfigs = parseBulkConfigs(snap, 'channel', channel.name);
-      if (snapConfigs.length > 0) {
-        return { success: true, configs: snapConfigs };
-      }
-    }
+
     // Last resort: synthetic nodes (clearly labeled as fallback)
     const fallbackConfigs = generateDynamicChannelConfigs(channel);
     return { success: true, configs: fallbackConfigs };
   } catch (err: unknown) {
-    console.warn(`Channel fetch notice for ${channel.name}: using embedded snapshot.`, err);
-    const handle = channel.handle.replace('@', '');
-    const snap = EMBEDDED_CHANNEL_SNAPSHOT[handle] || EMBEDDED_CHANNEL_SNAPSHOT[channel.id];
-    if (snap) {
-      const snapConfigs = parseBulkConfigs(snap, 'channel', channel.name);
-      if (snapConfigs.length > 0) {
-        return { success: true, configs: snapConfigs };
-      }
-    }
+    console.warn(`Channel fetch notice for ${channel.name}: using dynamic fallback.`, err);
     const fallbackConfigs = generateDynamicChannelConfigs(channel);
     return { success: true, configs: fallbackConfigs };
   }

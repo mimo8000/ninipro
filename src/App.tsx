@@ -585,8 +585,8 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6 z-10">
-        {/* Active Connection Widget (Visible on Configs & Channels) */}
-        {activeTab !== 'telegram' && (
+        {/* Active Connection Widget — sticky so the connect key stays on screen */}
+        <div className="sticky top-0 z-40 -mx-3 sm:-mx-6 px-3 sm:px-6 pt-2 pb-1 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
           <ConnectionWidget
             currentTheme={currentTheme}
             activeConfig={activeConfig}
@@ -594,7 +594,7 @@ export default function App() {
             onToggleConnection={handleToggleConnection}
             onSelectFastest={handleSelectFastest}
           />
-        )}
+        </div>
 
         {/* Batch Ping Progress Bar */}
         {pingProgress && (
