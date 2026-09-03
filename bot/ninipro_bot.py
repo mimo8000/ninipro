@@ -36,12 +36,12 @@ import urllib.parse
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 ADMIN_IDS = set(int(x) for x in os.environ.get("ADMIN_IDS", "7581433749").split(",") if x.strip())
 SUPPORT_URL = "https://t.me/SasaX60"
-CARD_NUMBER = os.environ.get("CARD_NUMBER", "6037-XXXX-XXXX-XXXX")
+CARD_NUMBER = os.environ.get("CARD_NUMBER", "6063731208450610")
 
 # قیمت‌ها (تومان) — قابل تغییر با env
 PRICE_TRIAL = int(os.environ.get("PRICE_TRIAL_NUM", "0"))
-PRICE_PRO = int(os.environ.get("PRICE_PRO_NUM", "100"))
-PRICE_ADMIN = int(os.environ.get("PRICE_ADMIN_NUM", "500"))
+PRICE_PRO = int(os.environ.get("PRICE_PRO_NUM", "200"))
+PRICE_ADMIN = int(os.environ.get("PRICE_ADMIN_NUM", "800"))
 MIN_TOPUP = 100
 TOPUP_AMOUNTS = [100, 200, 500, 1000, 2000, 5000]
 
@@ -250,7 +250,7 @@ I18N = {
         "poll_q": "📊 کدام پروتکل را بیشتر استفاده می‌کنید؟",
         "poll_opts": ["VLESS", "VMess", "Trojan", "Hysteria2"],
         "choose_plan": "💳 پلن مورد نظر را انتخاب کنید\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "plan_trial": f"🎁 تست ۷ روزه — {fmt_toman(PRICE_TRIAL) if PRICE_TRIAL else 'رایگان'}",
+        "plan_trial": f"🎁 تست ۲ روزه — {fmt_toman(PRICE_TRIAL) if PRICE_TRIAL else 'رایگان'}",
         "plan_pro": f"⭐ اشتراک PRO (۱ ماه) — {fmt_toman(PRICE_PRO)}",
         "plan_admin": f"👑 اشتراک نامحدود — {fmt_toman(PRICE_ADMIN)}",
         "need_topup": ("💸 موجودی کیف‌پول شما کافی نیست.\n\n"
@@ -333,7 +333,7 @@ I18N = {
         "poll_q": "📊 Which protocol do you use most?",
         "poll_opts": ["VLESS", "VMess", "Trojan", "Hysteria2"],
         "choose_plan": "💳 Choose a plan:",
-        "plan_trial": f"🎁 7-day trial — {'free' if PRICE_TRIAL == 0 else fmt_toman(PRICE_TRIAL)}",
+        "plan_trial": f"🎁 2-day trial — {'free' if PRICE_TRIAL == 0 else fmt_toman(PRICE_TRIAL)}",
         "plan_pro": f"⭐ PRO (1 month) — {fmt_toman(PRICE_PRO)}",
         "plan_admin": f"👑 Unlimited — {fmt_toman(PRICE_ADMIN)}",
         "need_topup": "💸 Not enough wallet balance.\n\nBalance: {bal}\nPrice: {price}\n\nTop up your wallet first.",
@@ -396,7 +396,7 @@ I18N = {
         "poll_q": "📊 أي بروتوكول تستخدمه أكثر؟",
         "poll_opts": ["VLESS", "VMess", "Trojan", "Hysteria2"],
         "choose_plan": "💳 اختر الخطة:",
-        "plan_trial": f"🎁 تجربة ٧ أيام — {'مجاني' if PRICE_TRIAL == 0 else fmt_toman(PRICE_TRIAL)}",
+        "plan_trial": f"🎁 تجربة ٢ أيام — {'مجاني' if PRICE_TRIAL == 0 else fmt_toman(PRICE_TRIAL)}",
         "plan_pro": f"⭐ برو (شهر) — {fmt_toman(PRICE_PRO)}",
         "plan_admin": f"👑 غير محدود — {fmt_toman(PRICE_ADMIN)}",
         "need_topup": "💸 رصيد المحفظة غير كافٍ.\n\nالرصيد: {bal}\nالسعر: {price}\n\nاشحن محفظتك أولًا.",
@@ -750,11 +750,34 @@ def handle_callback(uid, chat_id, data, msg_id):
     if data == "alist":
         if uid not in ADMIN_IDS:
             return
-        if not DB["codes"]:
-            edit_message(chat_id, msg_id, "📜 هنوز کدی صادر نشده.", admin_kb(uid))
-        else:
-            lines = "\n".join(f"• <code>{c['code']}</code> ({c['tier']})" for c in DB["codes"][:12])
-            edit_message(chat_id, msg_id, f"📜 آخرین کدها:\n{lines}", admin_kb(uid), parse_mode="HTML")
+        edit_message(chat_id, msg_id, codes_list_text(uid), codes_list_kb(uid), parse_mode="HTML")
+        return
+
+    if data == "alist_ref":
+        if uid not in ADMIN_IDS:
+            return
+        edit_message(chat_id, msg_id, codes_list_text(uid), codes_list_kb(uid), parse_mode="HTML")
+        return
+
+    if data.startswith("adelone:"):
+        if uid not in ADMIN_IDS:
+            return
+        code = data.split(":", 1)[1].upper()
+        found = [c for c in DB["codes"] if c["code"].upper() == code]
+        if found:
+            DB["codes"] = [c for c in DB["codes"] if c["code"].upper() != code]
+            db_save()
+            send_message(chat_id, t["del_done"].format(code=code), None)
+        edit_message(chat_id, msg_id, codes_list_text(uid), codes_list_kb(uid), parse_mode="HTML")
+        return
+
+    if data == "adelall":
+        if uid not in ADMIN_IDS:
+            return
+        n = len(DB["codes"])
+        DB["codes"] = []
+        db_save()
+        edit_message(chat_id, msg_id, f"🗑 همه {n} کد صادرشده حذف شد.", admin_kb(uid))
         return
 
     if data == "astats":

@@ -15,7 +15,7 @@ import { ConnectionWidget } from './components/ConnectionWidget';
 import { ConfigCard } from './components/ConfigCard';
 import { ChannelFetcherTab } from './components/ChannelFetcherTab';
 import { TelegramProxyTab } from './components/TelegramProxyTab';
-import { AdminModal } from './components/AdminModal';
+
 import { AddConfigModal } from './components/AddConfigModal';
 import { QrModal } from './components/QrModal';
 import { getActiveUser, setActiveUser, verifySubscriptionCode } from './utils/subscription';
@@ -108,8 +108,8 @@ export default function App() {
     setActiveUser(null);
   };
 
-  // 3. App Tabs: 'configs' | 'channels' | 'telegram' | 'admin'
-  const [activeTab, setActiveTab] = useState<'configs' | 'channels' | 'telegram' | 'admin'>('configs');
+  // 3. App Tabs: 'configs' | 'channels' | 'telegram'
+  const [activeTab, setActiveTab] = useState<'configs' | 'channels' | 'telegram'>('configs');
 
   // 4. Configs State
   const [configs, setConfigs] = useState<ConfigItem[]>(() => {
@@ -229,7 +229,6 @@ export default function App() {
   const [sortBy, setSortBy] = useState<'ping_asc' | 'newest' | 'name'>('ping_asc');
 
   // 9. Modals State
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [qrItem, setQrItem] = useState<ConfigItem | TelegramProxyItem | null>(null);
 
@@ -568,15 +567,8 @@ export default function App() {
         onThemeChange={handleThemeChange}
         activeUser={activeUser}
         activeTab={activeTab}
-        onSelectTab={(tab) => {
-          if (tab === 'admin') {
-            setIsAdminModalOpen(true);
-          } else {
-            setActiveTab(tab);
-          }
-        }}
+        onSelectTab={(tab) => setActiveTab(tab)}
         onOpenAddModal={() => setIsAddModalOpen(true)}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onLogout={handleLogout}
         onBatchPing={handleBatchPing}
         isTestingPing={isTestingPing}
@@ -862,15 +854,6 @@ export default function App() {
           <span>تمامی داده‌ها و اشتراک‌ها به صورت ایمن ذخیره می‌شوند</span>
         </div>
       </footer>
-
-      {/* Admin Panel Modal */}
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        currentTheme={currentTheme}
-        totalConfigsCount={configs.length}
-        healthyConfigsCount={healthyCount}
-      />
 
       {/* Add Config Modal */}
       <AddConfigModal

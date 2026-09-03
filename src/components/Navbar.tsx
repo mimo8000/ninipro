@@ -4,7 +4,6 @@ import { THEMES } from '../utils/theme';
 import { ThemeSelector } from './ThemeSelector';
 import {
   Radio,
-  Crown,
   ShieldAlert,
   LogOut,
   PlusCircle,
@@ -20,10 +19,9 @@ interface NavbarProps {
   currentTheme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
   activeUser: SubscriptionUser;
-  activeTab: 'configs' | 'channels' | 'telegram' | 'admin';
-  onSelectTab: (tab: 'configs' | 'channels' | 'telegram' | 'admin') => void;
+  activeTab: 'configs' | 'channels' | 'telegram';
+  onSelectTab: (tab: 'configs' | 'channels' | 'telegram') => void;
   onOpenAddModal: () => void;
-  onOpenAdminModal: () => void;
   onLogout: () => void;
   onBatchPing: () => void;
   isTestingPing: boolean;
@@ -37,7 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   onSelectTab,
   onOpenAddModal,
-  onOpenAdminModal,
   onLogout,
   onBatchPing,
   isTestingPing,
@@ -84,26 +81,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* User Subscription Badge */}
             <div className="flex items-center gap-2 pl-1 sm:pl-2 border-r border-white/10">
-              {activeUser.isAdmin ? (
-                <button
-                  id="navbar-admin-btn"
-                  onClick={onOpenAdminModal}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm group"
-                  title="باز کردن پنل مدیریت نامحدود"
-                >
-                  <Crown className="w-3.5 h-3.5 text-yellow-400 animate-bounce" />
-                  <span className="hidden sm:inline">ادمین نامحدود</span>
-                  <span className="sm:hidden font-mono">ADMIN</span>
-                </button>
-              ) : (
-                <div className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-                  <span className="hidden sm:inline">{activeUser.userName}</span>
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    {activeUser.expiresAt ? `${Math.ceil((activeUser.expiresAt - Date.now()) / 86400000)} روز` : 'نامحدود'}
-                  </span>
-                </div>
-              )}
+              <div className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-zinc-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                <span className="hidden sm:inline">{activeUser.userName}</span>
+                <span className="text-[10px] text-zinc-400 font-mono">
+                  {activeUser.expiresAt ? `${Math.ceil((activeUser.expiresAt - Date.now()) / 86400000)} روز` : 'نامحدود'}
+                </span>
+              </div>
 
               {/* Logout button */}
               <button
@@ -163,21 +147,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Send className="w-3.5 h-3.5" />
               <span>پروکسی تلگرام</span>
             </button>
-
-            {activeUser.isAdmin && (
-              <button
-                id="tab-btn-admin"
-                onClick={() => onSelectTab('admin')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
-                  activeTab === 'admin'
-                    ? `${theme.accentBg}`
-                    : 'bg-black/30 text-amber-400 hover:text-amber-300 hover:bg-amber-950/20 border border-amber-500/20'
-                }`}
-              >
-                <Crown className="w-3.5 h-3.5 text-yellow-400" />
-                <span>پنل ادمین نامحدود</span>
-              </button>
-            )}
           </nav>
 
           {/* Quick Action Buttons */}
