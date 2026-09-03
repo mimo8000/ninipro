@@ -371,6 +371,7 @@ export default function App() {
     let totalHarvested = 0;
 
     for (const channel of channels.filter((c) => c.enabled)) {
+      // Try live fetch first (fast 4s timeout), fall back to embedded snapshot
       const res = await fetchChannelConfigs(channel);
       if (res.success && res.configs.length > 0) {
         totalHarvested += res.configs.length;
@@ -379,8 +380,12 @@ export default function App() {
     }
 
     setIsSyncingChannels(false);
-    showNotification(`دریافت خودکار انجام شد! +${totalHarvested} سرور تازه اضافه شد.`);
-    confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } });
+    if (totalHarvested > 0) {
+      showNotification(`دریافت خودکار انجام شد! +${totalHarvested} سرور تازه اضافه شد.`);
+      confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } });
+    } else {
+      showNotification('کانال‌های انتخاب‌شده فعلاً کانفیگ عمومی ندارند. (برخی کانال‌ها خصوصی یا غیرفعال‌اند)');
+    }
   };
 
   const handleSyncSingleChannel = async (channel: ChannelSource) => {
@@ -390,6 +395,8 @@ export default function App() {
     if (res.success && res.configs.length > 0) {
       handleAddConfigs(res.configs);
       showNotification(`+${res.configs.length} سرور از «${channel.name}» دریافت شد.`);
+    } else {
+      showNotification(`کانال «${channel.name}» کانفیگ عمومی در دسترس ندارد.`);
     }
   };
 
