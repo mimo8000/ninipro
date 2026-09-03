@@ -340,6 +340,80 @@ export function parseSingleConfig(raw: string, source: ConfigItem['source'] = 'm
     }
 
     // 7. WIREGUARD / WARP
+    // 7. SSR (ssr://)
+    if (line.startsWith('ssr://')) {
+      const body = line.substring(6);
+      const b64 = (s: string) => safeBase64Decode(s.replace(/-/g, '+').replace(/_/g, '/'));
+      const [mainPart, queryPart] = body.split('/?');
+      const decodedMain = b64(mainPart);
+      const segs = decodedMain.split(':');
+      let server = '127.0.0.1';
+      let port = 443;
+      let protocol = 'origin';
+      let cipher = 'aes-256-cfb';
+      let obfs = 'plain';
+      if (segs.length >= 6) {
+        server = segs[0] || server;
+        port = parseInt(segs[1], 10) || port;
+        protocol = segs[2] || protocol;
+        cipher = segs[3] || cipher;
+        obfs = segs[4] || obfs;
+      }
+      let remark = 'ShadowsocksR';
+      if (queryPart) {
+        const rm = queryPart.match(/remarking=([^&]+)/);
+        if (rm) remark = decodeURIComponent(b64(rm[1])) || remark;
+      }
+      const countryInfo = detectCountry(remark, server);
+      return {
+        id: `ssr_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`,
+        name: remark || `ninipro-ssr-${countryInfo.code}`,
+        raw: line,
+        protocol: 'ssr',
+        server,
+        port,
+        ping: null,
+        status: 'untested',
+        country: countryInfo.country,
+        countryCode: countryInfo.code,
+        flag: countryInfo.flag,
+        security: `${cipher} / ${obfs}`,
+        network: protocol,
+        addedAt: Date.now(),
+        source,
+        sourceName: sourceName || 'ورودی کاربر',
+      };
+    }
+
+    // 8. Telegram MTProto / SOCKS proxy (tg://proxy?server=..&port=..&secret=..)
+    if (line.startsWith('tg://proxy') || line.startsWith('tg://socks')) {
+      const qs = line.substring(line.indexOf('?') + 1);
+      const params = new URLSearchParams(qs);
+      const server = params.get('server') || '127.0.0.1';
+      const port = parseInt(params.get('port') || '443', 10);
+      const secret = params.get('secret') || '';
+      const isTls = secret.startsWith('ee');
+      const countryInfo = detectCountry('Telegram Proxy', server);
+      return {
+        id: `tg_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`,
+        name: `${isTls ? 'MTProto' : 'SOCKS5'} • ${server.split('.')[0]}`,
+        raw: line,
+        protocol: 'other',
+        server,
+        port,
+        ping: null,
+        status: 'untested',
+        country: countryInfo.country,
+        countryCode: countryInfo.code,
+        flag: '🔐',
+        security: isTls ? 'MTProto (Fake TLS)' : 'SOCKS5',
+        network: 'tcp',
+        addedAt: Date.now(),
+        source,
+        sourceName: sourceName || 'ورودی کاربر',
+      };
+    }
+
     if (line.startsWith('wireguard://') || line.startsWith('warp://')) {
       const countryInfo = detectCountry('Warp Cloudflare', '162.159.192.1');
       return {
@@ -392,7 +466,7 @@ export function parseBulkConfigs(text: string, source: ConfigItem['source'] = 'm
     if (!trimmed) continue;
 
     // Scan for embedded protocol links in messy telegram channel text
-    const protocols = ['vless://', 'vmess://', 'trojan://', 'ss://', 'hysteria2://', 'hy2://', 'tuic://', 'wireguard://', 'warp://'];
+    const protocols = ['vless://', 'vmess://', 'trojan://', 'ss://', 'ssr://', 'tg://proxy', 'tg://socks', 'hysteria2://', 'hy2://', 'tuic://', 'wireguard://', 'warp://'];
     for (const proto of protocols) {
       const idx = trimmed.indexOf(proto);
       if (idx !== -1) {

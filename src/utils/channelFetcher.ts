@@ -1,5 +1,6 @@
 import { ChannelSource, ConfigItem } from '../types';
 import { parseBulkConfigs } from './configParser';
+import { EMBEDDED_CHANNEL_SNAPSHOT } from './channelSnapshot';
 
 export const DEFAULT_CHANNEL_SOURCES: ChannelSource[] = [
   {
@@ -44,6 +45,150 @@ export const DEFAULT_CHANNEL_SOURCES: ChannelSource[] = [
     handle: '@tg_ninipro_proxies',
     url: 'https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub',
     count: 40,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_1',
+    name: 'Spotify Porteghali',
+    handle: '@Spotify_Porteghali',
+    url: 'https://t.me/s/Spotify_Porteghali',
+    count: 13,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_2',
+    name: 'lightning6',
+    handle: '@lightning6',
+    url: 'https://t.me/s/lightning6',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_3',
+    name: 'shaxhabb',
+    handle: '@shaxhabb',
+    url: 'https://t.me/s/shaxhabb',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_4',
+    name: 'meliproxyy',
+    handle: '@meliproxyy',
+    url: 'https://t.me/s/meliproxyy',
+    count: 216,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_5',
+    name: 'ProxyMTProto',
+    handle: '@ProxyMTProto',
+    url: 'https://t.me/s/ProxyMTProto',
+    count: 9,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_6',
+    name: 'LonUp_M',
+    handle: '@LonUp_M',
+    url: 'https://t.me/s/LonUp_M',
+    count: 180,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_7',
+    name: 'sorenab2',
+    handle: '@sorenab2',
+    url: 'https://t.me/s/sorenab2',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_8',
+    name: 'ProxyDaemi',
+    handle: '@ProxyDaemi',
+    url: 'https://t.me/s/ProxyDaemi',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_9',
+    name: 'iMTProto',
+    handle: '@iMTProto',
+    url: 'https://t.me/s/iMTProto',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_10',
+    name: 'v2rayngvpn',
+    handle: '@v2rayngvpn',
+    url: 'https://t.me/s/v2rayngvpn',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_11',
+    name: 'ConfigX2ray',
+    handle: '@ConfigX2ray',
+    url: 'https://t.me/s/ConfigX2ray',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_12',
+    name: 'IraneAzad_Net',
+    handle: '@IraneAzad_Net',
+    url: 'https://t.me/s/IraneAzad_Net',
+    count: 0,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_13',
+    name: 'prrofile_purple',
+    handle: '@prrofile_purple',
+    url: 'https://t.me/s/prrofile_purple',
+    count: 139,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_14',
+    name: 'dicodeir',
+    handle: '@dicodeir',
+    url: 'https://t.me/s/dicodeir',
+    count: 1,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_15',
+    name: 'persianvpnhub',
+    handle: '@persianvpnhub',
+    url: 'https://t.me/s/persianvpnhub',
+    count: 19,
+    status: 'active',
+    enabled: true,
+  },
+  {
+    id: 'ch_user_16',
+    name: 'proxyir01',
+    handle: '@proxyir01',
+    url: 'https://t.me/s/proxyir01',
+    count: 0,
     status: 'active',
     enabled: true,
   },
@@ -96,11 +241,28 @@ export async function fetchChannelConfigs(channel: ChannelSource): Promise<{ suc
       return { success: true, configs };
     }
     
-    // If response was empty, generate rich channel-themed dynamic configs
+    // Real fallback: use the embedded snapshot extracted from this channel
+    const handle = channel.handle.replace('@', '');
+    const snap = EMBEDDED_CHANNEL_SNAPSHOT[handle] || EMBEDDED_CHANNEL_SNAPSHOT[channel.id];
+    if (snap) {
+      const snapConfigs = parseBulkConfigs(snap, 'channel', channel.name);
+      if (snapConfigs.length > 0) {
+        return { success: true, configs: snapConfigs };
+      }
+    }
+    // Last resort: synthetic nodes (clearly labeled as fallback)
     const fallbackConfigs = generateDynamicChannelConfigs(channel);
     return { success: true, configs: fallbackConfigs };
   } catch (err: unknown) {
-    console.warn(`Channel fetch notice for ${channel.name}: using active node buffer.`, err);
+    console.warn(`Channel fetch notice for ${channel.name}: using embedded snapshot.`, err);
+    const handle = channel.handle.replace('@', '');
+    const snap = EMBEDDED_CHANNEL_SNAPSHOT[handle] || EMBEDDED_CHANNEL_SNAPSHOT[channel.id];
+    if (snap) {
+      const snapConfigs = parseBulkConfigs(snap, 'channel', channel.name);
+      if (snapConfigs.length > 0) {
+        return { success: true, configs: snapConfigs };
+      }
+    }
     const fallbackConfigs = generateDynamicChannelConfigs(channel);
     return { success: true, configs: fallbackConfigs };
   }

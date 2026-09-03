@@ -18,7 +18,7 @@ import { TelegramProxyTab } from './components/TelegramProxyTab';
 import { AdminModal } from './components/AdminModal';
 import { AddConfigModal } from './components/AddConfigModal';
 import { QrModal } from './components/QrModal';
-import { getActiveUser, setActiveUser } from './utils/subscription';
+import { getActiveUser, setActiveUser, verifySubscriptionCode } from './utils/subscription';
 import {
   DEFAULT_CHANNEL_SOURCES,
   getPreloadedConfigs,
@@ -78,6 +78,25 @@ export default function App() {
 
   // 2. Authentication / Subscription Gate State
   const [activeUser, setAuthState] = useState<SubscriptionUser | null>(() => getActiveUser());
+
+  // Re-validate the stored session against the HMAC signature on every launch.
+  // Old/hardcoded sessions (e.g. legacy "ADMIN") are dropped -> AuthGate shows.
+  useEffect(() => {
+    const stored = getActiveUser();
+    if (!stored) return;
+    let cancelled = false;
+    verifySubscriptionCode(stored.code).then(res => {
+      if (cancelled) return;
+      if (res.success && res.user) {
+        setAuthState(res.user);
+      } else {
+        setActiveUser(null);
+        setAuthState(null);
+      }
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAuthenticated = (user: SubscriptionUser) => {
     setAuthState(user);
