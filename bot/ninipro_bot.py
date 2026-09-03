@@ -303,6 +303,7 @@ I18N = {
         "code_created": "✅ کد ساخته شد:\n\n<code>{code}</code>",
         "del_prompt": "🗑 کد اشتراکی که می‌خواهید حذف کنید را بفرستید:",
         "del_done": "🗑 کد {code} حذف شد.",
+        "codes_list": "📜 لیست کدها ({n} عدد):\n{lines}",
         "del_notfound": "❌ چنین کدی در لیست نیست.",
         "card_prompt": "💳 شماره کارت جدید را بفرستید (مثلاً 6037123412341234):",
         "card_done": "✅ شماره کارت تنظیم شد:\n<code>{card}</code>",
@@ -371,6 +372,7 @@ I18N = {
         "code_created": "✅ Code created:\n\n<code>{code}</code>",
         "del_prompt": "🗑 Send the subscription code to delete:",
         "del_done": "🗑 Code {code} deleted.",
+        "codes_list": "📜 Codes ({n}):\n{lines}",
         "del_notfound": "❌ Code not found.",
         "card_prompt": "💳 Send the new card number:",
         "card_done": "✅ Card number updated:\n<code>{card}</code>",
@@ -434,6 +436,7 @@ I18N = {
         "code_created": "✅ تم إنشاء الكود:\n\n<code>{code}</code>",
         "del_prompt": "🗑 أرسل الكود المراد حذفه:",
         "del_done": "🗑 تم حذف الكود {code}.",
+        "codes_list": "📜 الأكواد ({n}):\n{lines}",
         "del_notfound": "❌ الكود غير موجود.",
         "card_prompt": "💳 أرسل رقم البطاقة الجديد:",
         "card_done": "✅ تم تحديث البطاقة:\n<code>{card}</code>",
@@ -502,6 +505,27 @@ def wallet_kb(uid):
     rows.append([{"text": t["custom_amount"].format(min=MIN_TOPUP), "callback_data": "topup:custom"}])
     rows.append([{"text": t["back"], "callback_data": "home"}])
     return {"inline_keyboard": rows}
+
+
+def codes_list_text(uid):
+    t = L(uid)
+    if not DB["codes"]:
+        return "📜 هنوز کدی صادر نشده."
+    lines = []
+    for c in DB["codes"][:15]:
+        tier_lbl = {"standard": "استاندارد", "vip_premium": "پرو", "admin_unlimited": "ادمین"}.get(c.get("tier", ""), c.get("tier", ""))
+        lines.append(f"• <code>{c['code']}</code> ({tier_lbl})")
+    return t["codes_list"].format(n=len(DB["codes"]), lines="\n".join(lines))
+
+
+def codes_list_kb(uid):
+    kb = []
+    for c in DB["codes"][:15]:
+        kb.append([{"text": f"🗑 {c['code']}", "callback_data": f"adelone:{c['code']}"}])
+    kb.append([{"text": "🧹 حذف همه کدها", "callback_data": "adelall"}])
+    kb.append([{"text": "🔄 بروزرسانی", "callback_data": "alist_ref"}])
+    kb.append([{"text": L(uid)["back"], "callback_data": "admin"}])
+    return {"inline_keyboard": kb}
 
 
 def admin_kb(uid):
