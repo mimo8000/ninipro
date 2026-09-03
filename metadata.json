@@ -1,0 +1,6 @@
+{
+  "name": "ninipro",
+  "description": "سامانه فوق پیشرفته مدیریت، تست پینگ و دریافت خودکار کانفیگ‌های انواع پروتکل (VLESS, VMess, Trojan, SS, Hy2) و پروکسی تلگرام با سیستم اشتراک نامحدود ادمین و ۳ تم اختصاصی",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

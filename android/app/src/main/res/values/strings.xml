@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NiniPro</string>
+    <string name="title_activity_main">NiniPro</string>
+    <string name="package_name">com.ninipro.app</string>
+    <string name="custom_url_scheme">com.ninipro.app</string>
+</resources>
