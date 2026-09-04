@@ -4,10 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
+import androidx.activity.result.ActivityResult;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -15,8 +17,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class NiniVpnPlugin extends Plugin {
 
     public static final CopyOnWriteArrayList<NiniVpnBridgeListener> listeners = new CopyOnWriteArrayList<>();
-    public static final int VPN_PERMISSION_REQUEST = 35711;
-    private PluginCall pendingCall = null;
     private String pendingConfig = null;
 
     interface NiniVpnBridgeListener {
@@ -35,24 +35,18 @@ public class NiniVpnPlugin extends Plugin {
         });
     }
 
-    @Override
-    protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
-        super.handleOnActivityResult(requestCode, resultCode, data);
-        if (requestCode != VPN_PERMISSION_REQUEST) return;
-        if (resultCode == Activity.RESULT_OK) {
-            // User granted VPN permission — start the service now.
-            if (pendingConfig != null) {
-                Context ctx = getContext();
-                NiniVpnService.connect(ctx, pendingConfig);
-                pendingCall.resolve(new JSObject().put("status", "connecting"));
-            }
+    @ActivityCallback
+    private void handleVpnPermission(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        int code = result.getResultCode();
+        if (code == Activity.RESULT_OK && pendingConfig != null) {
+            Context ctx = getContext();
+            NiniVpnService.connect(ctx, pendingConfig);
+            call.resolve(new JSObject().put("status", "connecting"));
         } else {
-            if (pendingCall != null) {
-                pendingCall.reject("VPN permission denied");
-            }
+            call.reject("VPN permission denied");
             NiniVpnBridge.emit("error:VPN permission denied");
         }
-        pendingCall = null;
         pendingConfig = null;
     }
 
@@ -71,10 +65,9 @@ public class NiniVpnPlugin extends Plugin {
             call.resolve(new JSObject().put("status", "connecting"));
             return;
         }
-        // Need to ask the user first.
-        pendingCall = call;
+        // Ask the user via the system VPN consent dialog.
         pendingConfig = config;
-        activity.startActivityForResult(prepare, VPN_PERMISSION_REQUEST);
+        startActivityForResult(call, prepare, "handleVpnPermission");
     }
 
     @PluginMethod

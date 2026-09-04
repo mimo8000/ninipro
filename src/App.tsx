@@ -114,6 +114,7 @@ export default function App() {
   // 4. Configs State
   const [configs, setConfigs] = useState<ConfigItem[]>(() => {
     try {
+      if (localStorage.getItem('ninipro_configs_cleared') === '1') return [];
       const raw = localStorage.getItem(STORAGE_KEY_CONFIGS);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -137,6 +138,7 @@ export default function App() {
   // 5. Telegram Proxies State
   const [telegramProxies, setTelegramProxies] = useState<TelegramProxyItem[]>(() => {
     try {
+      if (localStorage.getItem('ninipro_tg_cleared') === '1') return [];
       const raw = localStorage.getItem(STORAGE_KEY_TG_PROXIES);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -370,11 +372,33 @@ export default function App() {
     showNotification(`${removedCount} کانفیگ قطع و نامعتبر از لیست حذف شد.`);
   };
 
+  // Delete ALL configs (persisted so they don't come back on reload)
+  const handleDeleteAllConfigs = () => {
+    setConfigs([]);
+    setActiveConfigId(null);
+    try {
+      localStorage.setItem('ninipro_configs_cleared', '1');
+      localStorage.removeItem(STORAGE_KEY_CONFIGS);
+    } catch {}
+    showNotification('تمام کانفیگ‌ها حذف شدند.');
+  };
+
+  // Delete ALL telegram proxies (persisted)
+  const handleDeleteAllProxies = () => {
+    setTelegramProxies([]);
+    try {
+      localStorage.setItem('ninipro_tg_cleared', '1');
+      localStorage.removeItem(STORAGE_KEY_TG_PROXIES);
+    } catch {}
+    showNotification('تمام پروکسی‌های تلگرام حذف شدند.');
+  };
+
   // Add Configs
   const handleAddConfigs = (newConfigs: ConfigItem[]) => {
     // Prepend and deduplicate
     const seen = new Set(configs.map((c) => c.raw));
     const toAdd = newConfigs.filter((c) => !seen.has(c.raw));
+    try { localStorage.removeItem('ninipro_configs_cleared'); } catch {}
     setConfigs((prev) => [...toAdd, ...prev]);
     showNotification(`${toAdd.length} کانفیگ با موفقیت به لیست اضافه شد.`);
   };
@@ -683,6 +707,21 @@ export default function App() {
                     <span>حذف قطعی‌ها</span>
                   </button>
 
+                  {/* Delete ALL configs button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('همه کانفیگ‌ها حذف شوند؟ این کار قابل بازگشت نیست.')) {
+                        handleDeleteAllConfigs();
+                      }
+                    }}
+                    className="px-3 py-2.5 rounded-2xl bg-red-600/80 hover:bg-red-500 border border-red-400/40 text-white text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap shadow-lg shadow-red-900/40"
+                    title="حذف تمام کانفیگ‌ها"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>حذف همه کانفیگ</span>
+                  </button>
+
                   {/* Sort selector */}
                   <div className="relative shrink-0">
                     <select
@@ -872,6 +911,7 @@ export default function App() {
             onAddCustomProxy={handleAddCustomTgProxy}
             onShowQr={(proxy) => setQrItem(proxy)}
             isTestingPing={isTestingPing}
+            onDeleteAllProxies={handleDeleteAllProxies}
           />
         )}
       </main>

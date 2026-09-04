@@ -39,6 +39,7 @@ interface TelegramProxyTabProps {
   onAddCustomProxy: (proxy: TelegramProxyItem) => void;
   onShowQr: (proxy: TelegramProxyItem) => void;
   isTestingPing: boolean;
+  onDeleteAllProxies: () => void;
 }
 
 export const TelegramProxyTab: React.FC<TelegramProxyTabProps> = ({
@@ -49,6 +50,7 @@ export const TelegramProxyTab: React.FC<TelegramProxyTabProps> = ({
   onAddCustomProxy,
   onShowQr,
   isTestingPing,
+  onDeleteAllProxies,
 }) => {
   const theme = THEMES[currentTheme];
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -226,6 +228,19 @@ export const TelegramProxyTab: React.FC<TelegramProxyTabProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+            <button
+              id="delete-all-tg-proxies-btn"
+              onClick={() => {
+                if (window.confirm('همه پروکسی‌های تلگرام حذف شوند؟ این کار قابل بازگشت نیست.')) {
+                  onDeleteAllProxies();
+                }
+              }}
+              className="px-3.5 py-2.5 rounded-2xl bg-red-600/80 hover:bg-red-500 border border-red-400/40 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-red-900/40"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>حذف همه پروکسی</span>
+            </button>
+
             <button
               id="ping-all-tg-proxies-btn"
               onClick={onTestAllProxies}
