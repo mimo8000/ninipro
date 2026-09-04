@@ -54,8 +54,9 @@ public class NiniVpnPlugin extends Plugin {
     @PluginMethod
     public void status(PluginCall call) {
         JSObject ret = new JSObject();
-        ret.put("running", NiniVpnService.running);
-        ret.put("lastError", NiniVpnService.lastError == null ? "" : NiniVpnService.lastError);
+        ret.put("running", NiniVpnService.getRunning());
+        String err = NiniVpnService.getLastError();
+        ret.put("lastError", err == null ? "" : err);
         call.resolve(ret);
     }
 }

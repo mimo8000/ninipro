@@ -55,11 +55,17 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         const val NOTIFICATION_CHANNEL = "nini_vpn"
 
         @JvmStatic
-        var running: Boolean = false
+        internal var running: Boolean = false
             private set
 
         @JvmStatic
-        var lastError: String? = null
+        internal var lastError: String? = null
+
+        @JvmStatic
+        fun getRunning(): Boolean = running
+
+        @JvmStatic
+        fun getLastError(): String? = lastError
 
         private var libboxReady = false
 
