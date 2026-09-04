@@ -341,23 +341,7 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 } else {
                     builder.addRoute("::", 0)
                 }
-                // excludeRoute(InetPrefix) is API 35+ only
-                if (Build.VERSION.SDK_INT >= 35) {
-                    val ex4 = options.getInet4RouteExcludeAddress()
-                    while (ex4.hasNext()) {
-                        val a = ex4.next()
-                        builder.excludeRoute(
-                            android.net.InetPrefix.parse("${a.address()}/${a.prefix()}"),
-                        )
-                    }
-                    val ex6 = options.getInet6RouteExcludeAddress()
-                    while (ex6.hasNext()) {
-                        val a = ex6.next()
-                        builder.excludeRoute(
-                            android.net.InetPrefix.parse("${a.address()}/${a.prefix()}"),
-                        )
-                    }
-                }
+                // exclude routes are optional for basic routing; skip to keep API-level safe
             } else {
                 val r4 = options.getInet4RouteRange()
                 while (r4.hasNext()) {
