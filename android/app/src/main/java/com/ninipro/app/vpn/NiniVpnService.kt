@@ -36,6 +36,7 @@ import io.nekohasekai.libbox.StringIterator
 import io.nekohasekai.libbox.SystemProxyStatus
 import io.nekohasekai.libbox.TunOptions
 import io.nekohasekai.libbox.WIFIState
+import go.Seq
 import java.net.InetSocketAddress
 import java.net.NetworkInterface as JavaNetworkInterface
 
@@ -107,12 +108,16 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                     stopSelf()
                     return START_NOT_STICKY
                 }
-                startVpn(cfg)
+                // Must show foreground notification within ~5s of onStartCommand.
+                startForeground(NOTIFICATION_ID, buildNotification(profileName, "در حال اتصال…"))
+                Thread { startVpn(cfg) }.start()
             }
 
             ACTION_DISCONNECT -> {
-                stopVpn()
-                stopSelf()
+                Thread {
+                    stopVpn()
+                    stopSelf()
+                }.start()
             }
         }
         return START_NOT_STICKY
@@ -137,7 +142,11 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         }
         try {
             initializeLibbox()
-            startForeground(NOTIFICATION_ID, buildNotification(profileName, "در حال اتصال…"))
+            try {
+                startForeground(NOTIFICATION_ID, buildNotification(profileName, "در حال اتصال…"))
+            } catch (e: Throwable) {
+                Log.w(TAG, "startForeground failed: ${e.message}")
+            }
 
             val server = Libbox.newCommandServer(this, this)
             server.start()
@@ -195,6 +204,7 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     private fun initializeLibbox() {
         if (libboxReady) return
+        Seq.setContext(applicationContext)
         val working = getExternalFilesDir(null) ?: filesDir
         working.mkdirs()
         cacheDir.mkdirs()
