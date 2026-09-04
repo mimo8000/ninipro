@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -50,9 +52,13 @@ jobs:
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          # build-tools + platform need to match compileSdk (35)
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+
+      - name: Confirm libbox AAR present
+        run: test -f android/app/libs/libbox.aar && echo "libbox.aar OK ($(du -h android/app/libs/libbox.aar | cut -f1))" || (echo 'MISSING libbox.aar' && exit 1)
 
       - name: Build Debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon

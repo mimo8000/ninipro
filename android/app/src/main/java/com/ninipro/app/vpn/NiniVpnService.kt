@@ -7,7 +7,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
-import android.net.InetPrefix
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
@@ -328,29 +327,36 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 if (r4.hasNext()) {
                     while (r4.hasNext()) {
                         val a = r4.next()
-                        builder.addRoute(InetPrefix.parse("${a.address()}/${a.prefix()}"))
+                        builder.addRoute(a.address(), a.prefix())
                     }
                 } else {
-                    builder.addRoute(InetPrefix.parse("0.0.0.0/0"))
+                    builder.addRoute("0.0.0.0", 0)
                 }
                 val r6 = options.getInet6RouteAddress()
                 if (r6.hasNext()) {
                     while (r6.hasNext()) {
                         val a = r6.next()
-                        builder.addRoute(InetPrefix.parse("${a.address()}/${a.prefix()}"))
+                        builder.addRoute(a.address(), a.prefix())
                     }
                 } else {
-                    builder.addRoute(InetPrefix.parse("::/0"))
+                    builder.addRoute("::", 0)
                 }
-                val ex4 = options.getInet4RouteExcludeAddress()
-                while (ex4.hasNext()) {
-                    val a = ex4.next()
-                    builder.excludeRoute(InetPrefix.parse("${a.address()}/${a.prefix()}"))
-                }
-                val ex6 = options.getInet6RouteExcludeAddress()
-                while (ex6.hasNext()) {
-                    val a = ex6.next()
-                    builder.excludeRoute(InetPrefix.parse("${a.address()}/${a.prefix()}"))
+                // excludeRoute(InetPrefix) is API 35+ only
+                if (Build.VERSION.SDK_INT >= 35) {
+                    val ex4 = options.getInet4RouteExcludeAddress()
+                    while (ex4.hasNext()) {
+                        val a = ex4.next()
+                        builder.excludeRoute(
+                            android.net.InetPrefix.parse("${a.address()}/${a.prefix()}"),
+                        )
+                    }
+                    val ex6 = options.getInet6RouteExcludeAddress()
+                    while (ex6.hasNext()) {
+                        val a = ex6.next()
+                        builder.excludeRoute(
+                            android.net.InetPrefix.parse("${a.address()}/${a.prefix()}"),
+                        )
+                    }
                 }
             } else {
                 val r4 = options.getInet4RouteRange()
