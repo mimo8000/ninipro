@@ -243,9 +243,10 @@ export default function App() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Connection Handler
+  // Connection Handler (real VPN via native sing-box)
   const handleToggleConnection = () => {
-    if (connectionStats.isConnected) {
+    if (connectionStats.isConnected || connectionStats.connecting) {
+      // DISCONNECT
       setConnectionStats((prev) => ({
         ...prev,
         isConnected: false,
@@ -253,30 +254,56 @@ export default function App() {
         downloadSpeedKBps: 0,
         uploadSpeedKBps: 0,
       }));
-      showNotification('اتصال با موفقیت قطع شد.');
-    } else {
-      if (!activeConfig) {
-        showNotification('لطفاً ابتدا یک کانفیگ انتخاب کنید.');
-        return;
-      }
-      setConnectionStats((prev) => ({ ...prev, connecting: true }));
-      setTimeout(() => {
-        setConnectionStats({
-          isConnected: true,
-          connecting: false,
-          activeConfigId: activeConfig.id,
-          connectedSince: Date.now(),
-          downloadSpeedKBps: 180 + Math.random() * 200,
-          uploadSpeedKBps: 45 + Math.random() * 60,
-          totalDownloadedMB: 0,
-          totalUploadedMB: 0,
-          latencyMs: activeConfig.ping && activeConfig.ping > 0 ? activeConfig.ping : 84,
-          packetLossPercent: 0,
-        });
-        showNotification(`با موفقیت به «${activeConfig.name}» متصل شدید.`);
-        confetti({ particleCount: 45, spread: 60, origin: { y: 0.7 } });
-      }, 600);
+      import('./utils/vpnManager').then((m) => m.disconnectVpn()).catch(() => {});
+      showNotification('در حال قطع اتصال…');
+      return;
     }
+
+    // CONNECT — use the selected config + whole pool as a selector
+    if (!activeConfig) {
+      showNotification('لطفاً ابتدا یک کانفیگ انتخاب کنید.');
+      return;
+    }
+    const pool = configs
+      .map((c) => c.raw)
+      .filter((raw) => !!raw && !raw.startsWith('tg://') && !raw.startsWith('http'));
+    if (pool.length === 0) {
+      showNotification('کانفیگ معتبری برای اتصال یافت نشد.');
+      return;
+    }
+    setConnectionStats((prev) => ({ ...prev, connecting: true }));
+    showNotification('در حال برقراری تونل VPN…');
+    import('./utils/vpnManager').then(async (m) => {
+      m.onVpnEvent((e) => {
+        if (e.event === 'connected') {
+          setConnectionStats({
+            isConnected: true,
+            connecting: false,
+            activeConfigId: activeConfig?.id ?? null,
+            connectedSince: Date.now(),
+            downloadSpeedKBps: 180 + Math.random() * 200,
+            uploadSpeedKBps: 45 + Math.random() * 60,
+            totalDownloadedMB: 0,
+            totalUploadedMB: 0,
+            latencyMs: activeConfig?.ping && activeConfig.ping > 0 ? activeConfig.ping : 84,
+            packetLossPercent: 0,
+          });
+          showNotification('متصل شدید 🔑 — یوتیوب و سایت‌های فیلترشده باز می‌شوند.');
+          confetti({ particleCount: 45, spread: 60, origin: { y: 0.7 } });
+        } else if (e.event.startsWith('error')) {
+          setConnectionStats((prev) => ({ ...prev, connecting: false, isConnected: false }));
+          showNotification('خطا در اتصال: ' + e.event.replace('error:', ''));
+        } else if (e.event === 'disconnected') {
+          setConnectionStats((prev) => ({ ...prev, connecting: false, isConnected: false, downloadSpeedKBps: 0, uploadSpeedKBps: 0 }));
+        }
+      });
+      try {
+        await m.connectVpn(pool.filter((l) => l !== activeConfig?.raw).concat(activeConfig.raw), activeConfig.name);
+      } catch (err: any) {
+        setConnectionStats((prev) => ({ ...prev, connecting: false, isConnected: false }));
+        showNotification('خطا: ' + (err?.message || 'اتصال ناموفق'));
+      }
+    });
   };
 
   const handleSelectConfig = (cfg: ConfigItem) => {
