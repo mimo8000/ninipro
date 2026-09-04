@@ -57,17 +57,23 @@ public class NiniVpnPlugin extends Plugin {
             call.reject("config required");
             return;
         }
-        Activity activity = getActivity();
-        Intent prepare = VpnService.prepare(activity);
-        if (prepare == null) {
-            // Already granted.
-            NiniVpnService.connect(activity, config);
-            call.resolve(new JSObject().put("status", "connecting"));
-            return;
-        }
-        // Ask the user via the system VPN consent dialog.
-        pendingConfig = config;
-        startActivityForResult(call, prepare, "handleVpnPermission");
+        // Capacitor plugin methods run on a BACKGROUND thread; the VPN consent
+        // dialog (startActivityForResult) MUST be launched from the UI thread,
+        // otherwise an uncaught exception kills the whole app.
+        final String cfg = config;
+        getActivity().runOnUiThread(() -> {
+            Activity activity = getActivity();
+            Intent prepare = VpnService.prepare(activity);
+            if (prepare == null) {
+                // Already granted.
+                NiniVpnService.connect(activity, cfg);
+                call.resolve(new JSObject().put("status", "connecting"));
+                return;
+            }
+            // Ask the user via the system VPN consent dialog.
+            pendingConfig = cfg;
+            startActivityForResult(call, prepare, "handleVpnPermission");
+        });
     }
 
     @PluginMethod

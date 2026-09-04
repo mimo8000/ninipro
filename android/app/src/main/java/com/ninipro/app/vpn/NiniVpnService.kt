@@ -136,21 +136,26 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     }
 
     private fun startVpn(config: String) {
+        Log.i(TAG, "startVpn begin (config ${config.length} chars)")
         if (running) {
             tryReload(config)
             return
         }
         try {
+            Log.i(TAG, "initializing libbox...")
             initializeLibbox()
+            Log.i(TAG, "libbox initialized OK")
             try {
                 startForeground(NOTIFICATION_ID, buildNotification(profileName, "در حال اتصال…"))
             } catch (e: Throwable) {
                 Log.w(TAG, "startForeground failed: ${e.message}")
             }
 
+            Log.i(TAG, "creating command server...")
             val server = Libbox.newCommandServer(this, this)
             server.start()
             commandServer = server
+            Log.i(TAG, "command server started")
 
             // Validate before starting so we surface a clear error to the UI.
             try {
