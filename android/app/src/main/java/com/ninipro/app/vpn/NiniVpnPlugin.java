@@ -61,9 +61,21 @@ public class NiniVpnPlugin extends Plugin {
         // dialog (startActivityForResult) MUST be launched from the UI thread,
         // otherwise an uncaught exception kills the whole app.
         final String cfg = config;
-        getActivity().runOnUiThread(() -> {
+        final Activity act = getActivity();
+        if (act == null) {
+            call.reject("no activity");
+            return;
+        }
+        act.runOnUiThread(() -> {
             Activity activity = getActivity();
-            Intent prepare = VpnService.prepare(activity);
+            if (activity == null) { call.reject("no activity"); return; }
+            Intent prepare;
+            try {
+                prepare = VpnService.prepare(activity);
+            } catch (Throwable t) {
+                call.reject("prepare failed: " + t.getMessage());
+                return;
+            }
             if (prepare == null) {
                 // Already granted.
                 NiniVpnService.connect(activity, cfg);
@@ -72,7 +84,12 @@ public class NiniVpnPlugin extends Plugin {
             }
             // Ask the user via the system VPN consent dialog.
             pendingConfig = cfg;
-            startActivityForResult(call, prepare, "handleVpnPermission");
+            try {
+                startActivityForResult(call, prepare, "handleVpnPermission");
+            } catch (Throwable t) {
+                pendingConfig = null;
+                call.reject("consent dialog failed: " + t.getMessage());
+            }
         });
     }
 

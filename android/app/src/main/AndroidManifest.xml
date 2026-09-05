@@ -35,11 +35,19 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- Real VPN service (sing-box core) -->
+        <!-- Real VPN service (sing-box core).
+             Android 14 REQUIRES a foregroundServiceType or startForeground()
+             throws MissingForegroundServiceTypeException and kills the app.
+             "specialUse" + the subtype property is the valid form for a VPN
+             tunnel (the literal "vpn" value is NOT a real constant). -->
         <service
             android:name=".vpn.NiniVpnService"
             android:exported="true"
+            android:foregroundServiceType="specialUse"
             android:permission="android.permission.BIND_VPN_SERVICE">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="vpn" />
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>

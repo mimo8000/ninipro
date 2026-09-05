@@ -99,28 +99,78 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     // ------------------------------------------------------------ lifecycle
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_CONNECT -> {
-                val cfg = intent.getStringExtra(EXTRA_CONFIG)
-                if (cfg.isNullOrBlank()) {
-                    lastError = "empty config"
-                    NiniVpnBridge.emit("error:empty config")
-                    stopSelf()
-                    return START_NOT_STICKY
+        // NEVER let an exception escape here: onStartCommand runs on the main
+        // thread and any throw kills the whole app ("برنامه دارای اشکال است").
+        try {
+            when (intent?.action) {
+                ACTION_CONNECT -> {
+                    val cfg = intent.getStringExtra(EXTRA_CONFIG)
+                    if (cfg.isNullOrBlank()) {
+                        lastError = "empty config"
+                        NiniVpnBridge.emit("error:empty config")
+                        stopSelf()
+                        return START_NOT_STICKY
+                    }
+                    // Android 12+ requires startForeground within ~5s.
+                    enterForeground("در حال اتصال…")
+                    Thread { startVpn(cfg) }.start()
                 }
-                // Must show foreground notification within ~5s of onStartCommand.
-                startForeground(NOTIFICATION_ID, buildNotification(profileName, "در حال اتصال…"))
-                Thread { startVpn(cfg) }.start()
-            }
 
-            ACTION_DISCONNECT -> {
-                Thread {
-                    stopVpn()
-                    stopSelf()
-                }.start()
+                ACTION_DISCONNECT -> {
+                    Thread {
+                        stopVpn()
+                        stopSelf()
+                    }.start()
+                }
             }
+        } catch (e: Throwable) {
+            lastError = e.message ?: e.javaClass.simpleName
+            Log.e(TAG, "onStartCommand failed", e)
+            runCatching { NiniVpnBridge.emit("error:" + lastError) }
+            writeCrashFile(e)
+            runCatching { stopSelf() }
         }
         return START_NOT_STICKY
+    }
+
+    /** Promote to foreground; tolerate failure (no notification permission etc.). */
+    private fun enterForeground(text: String) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    buildNotification(profileName, text),
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, buildNotification(profileName, text))
+            }
+        } catch (e: Throwable) {
+            Log.e(TAG, "startForeground failed: ${e.javaClass.name}: ${e.message}", e)
+            writeCrashFile(e)
+            try {
+                startForeground(NOTIFICATION_ID, buildNotification(profileName, text))
+            } catch (e2: Throwable) {
+                Log.e(TAG, "startForeground retry failed", e2)
+            }
+        }
+    }
+
+    private fun writeCrashFile(e: Throwable) {
+        try {
+            val sw = java.io.StringWriter()
+            e.printStackTrace(java.io.PrintWriter(sw))
+            val body = sw.toString()
+            val ext = getExternalFilesDir(null)
+            if (ext != null) {
+                java.io.FileWriter(java.io.File(ext, "crash.log"), true).use { w ->
+                    w.write("==== vpn ${System.currentTimeMillis()} ====\n")
+                    w.write(body)
+                    w.write("\n")
+                }
+            }
+        } catch (ignored: Throwable) {
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = super.onBind(intent)
@@ -142,6 +192,17 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             return
         }
         try {
+            // Catch ANY native/JNI throw from libbox so the app never hard-crashes.
+            val thread = Thread.currentThread()
+            val old = thread.uncaughtExceptionHandler
+            thread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { t, e ->
+                lastError = e.message ?: e.javaClass.simpleName
+                Log.e(TAG, "startVpn thread crashed", e)
+                writeCrashFile(e)
+                NiniVpnBridge.emit("error:" + (e.message ?: e.javaClass.simpleName))
+                runCatching { stopSelf() }
+            }
+
             Log.i(TAG, "initializing libbox...")
             initializeLibbox()
             Log.i(TAG, "libbox initialized OK")
@@ -173,6 +234,7 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             updateNotification("متصل")
             NiniVpnBridge.emit("connected")
             Log.i(TAG, "VPN started (sing-box ${runCatching { Libbox.version() }.getOrElse { "?" }})")
+            Thread.currentThread().uncaughtExceptionHandler = null
         } catch (e: Throwable) {
             lastError = e.message
             Log.e(TAG, "start failed", e)
