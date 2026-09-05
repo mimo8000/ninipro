@@ -51,3 +51,12 @@ export async function vpnStatus(): Promise<{ running: boolean; lastError: string
     return { running: false, lastError: '' };
   }
 }
+
+export async function vpnLogs(): Promise<string> {
+  try {
+    const r = await call('getLogs');
+    return r.logs || '';
+  } catch {
+    return '';
+  }
+}

@@ -70,6 +70,22 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
         private var libboxReady = false
 
+        // ---- live log (like ShadowRay's گزارشات) ----
+        private val logLines = java.util.concurrent.ConcurrentLinkedDeque<String>()
+        private const val LOG_MAX = 400
+
+        @JvmStatic
+        fun log(msg: String) {
+            val line = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+                .format(java.util.Date()) + "  " + msg
+            logLines.addLast(line)
+            while (logLines.size > LOG_MAX) logLines.pollFirst()
+            Log.i(TAG, msg)
+        }
+
+        @JvmStatic
+        fun getLogs(): String = logLines.joinToString("\n")
+
         @JvmStatic
         fun connect(context: Context, config: String) {
             val intent = Intent(context, NiniVpnService::class.java).apply {
@@ -125,7 +141,7 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             }
         } catch (e: Throwable) {
             lastError = e.message ?: e.javaClass.simpleName
-            Log.e(TAG, "onStartCommand failed", e)
+            log("❌ خطای سرویس: ${e.javaClass.simpleName}: ${e.message}")
             runCatching { NiniVpnBridge.emit("error:" + lastError) }
             writeCrashFile(e)
             runCatching { stopSelf() }
@@ -186,7 +202,7 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     }
 
     private fun startVpn(config: String) {
-        Log.i(TAG, "startVpn begin (config ${config.length} chars)")
+        log("شروع اتصال — کانفیگ ${config.length} کاراکتر")
         if (running) {
             tryReload(config)
             return
@@ -197,32 +213,32 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             val old = thread.uncaughtExceptionHandler
             thread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { t, e ->
                 lastError = e.message ?: e.javaClass.simpleName
-                Log.e(TAG, "startVpn thread crashed", e)
+                log("❌ کرش ترد VPN: ${e.javaClass.simpleName}: ${e.message}")
                 writeCrashFile(e)
                 NiniVpnBridge.emit("error:" + (e.message ?: e.javaClass.simpleName))
                 runCatching { stopSelf() }
             }
 
-            Log.i(TAG, "initializing libbox...")
+            log("در حال آماده‌سازی هسته sing-box…")
             initializeLibbox()
-            Log.i(TAG, "libbox initialized OK")
+            log("هسته sing-box آماده شد")
             try {
                 startForeground(NOTIFICATION_ID, buildNotification(profileName, "در حال اتصال…"))
             } catch (e: Throwable) {
                 Log.w(TAG, "startForeground failed: ${e.message}")
             }
 
-            Log.i(TAG, "creating command server...")
+            log("ساخت سرور فرمان…")
             val server = Libbox.newCommandServer(this, this)
             server.start()
             commandServer = server
-            Log.i(TAG, "command server started")
+            log("سرور فرمان بالا آمد")
 
             // Validate before starting so we surface a clear error to the UI.
             try {
                 server.checkConfig(config)
             } catch (e: Throwable) {
-                Log.w(TAG, "checkConfig rejected profile: ${e.message}")
+                log("هشدار: کانفیگ نامعتبر — ${e.javaClass.simpleName}: ${e.message}")
             }
 
             val override = OverrideOptions()
@@ -233,11 +249,11 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             lastError = null
             updateNotification("متصل")
             NiniVpnBridge.emit("connected")
-            Log.i(TAG, "VPN started (sing-box ${runCatching { Libbox.version() }.getOrElse { "?" }})")
+            log("✅ VPN برقرار شد (sing-box ${runCatching { Libbox.version() }.getOrElse { "?" }})")
             Thread.currentThread().uncaughtExceptionHandler = null
         } catch (e: Throwable) {
             lastError = e.message
-            Log.e(TAG, "start failed", e)
+            log("❌ خطای اتصال: ${e.javaClass.simpleName}: ${e.message}")
             NiniVpnBridge.emit("error:" + (e.message ?: e.javaClass.simpleName))
             stopVpn()
             stopSelf()
@@ -362,7 +378,9 @@ class NiniVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     override fun setSystemProxyEnabled(enabled: Boolean) {}
 
     override fun writeDebugMessage(message: String?) {
-        Log.d(TAG, message ?: "")
+        val m = message ?: return
+        Log.d(TAG, m)
+        log(m)
     }
 
     // ------------------------------------------------------------ PlatformInterface

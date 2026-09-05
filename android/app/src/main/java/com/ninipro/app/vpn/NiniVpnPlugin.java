@@ -102,6 +102,20 @@ public class NiniVpnPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getLogs(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("logs", NiniVpnService.getLogs());
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void clearLogs(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("ok", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
     public void status(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("running", NiniVpnService.getRunning());

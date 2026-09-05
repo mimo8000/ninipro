@@ -18,6 +18,7 @@ import { TelegramProxyTab } from './components/TelegramProxyTab';
 
 import { AddConfigModal } from './components/AddConfigModal';
 import { QrModal } from './components/QrModal';
+import { LogsModal } from './components/LogsModal';
 import { getActiveUser, setActiveUser, verifySubscriptionCode } from './utils/subscription';
 import {
   DEFAULT_CHANNEL_SOURCES,
@@ -232,6 +233,7 @@ export default function App() {
 
   // 9. Modals State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [qrItem, setQrItem] = useState<ConfigItem | TelegramProxyItem | null>(null);
 
   // 10. Ping Testing & Channel Syncing States
@@ -642,6 +644,7 @@ export default function App() {
             activeConfig={activeConfig}
             connectionStats={connectionStats}
             onToggleConnection={handleToggleConnection}
+            onShowLogs={() => setIsLogsOpen(true)}
             onSelectFastest={handleSelectFastest}
           />
         </div>
@@ -936,6 +939,9 @@ export default function App() {
         currentTheme={currentTheme}
         onAddConfigs={handleAddConfigs}
       />
+
+      {/* Live connection logs (گزارشات) */}
+      <LogsModal isOpen={isLogsOpen} onClose={() => setIsLogsOpen(false)} />
 
       {/* QR Code Modal */}
       <QrModal

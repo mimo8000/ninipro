@@ -13,6 +13,7 @@ import {
   Wifi,
   Sparkles,
   CheckCircle2,
+  FileText,
 } from 'lucide-react';
 
 interface ConnectionWidgetProps {
@@ -20,6 +21,7 @@ interface ConnectionWidgetProps {
   activeConfig: ConfigItem | null;
   connectionStats: ConnectionStats;
   onToggleConnection: () => void;
+  onShowLogs?: () => void;
   onSelectFastest: () => void;
 }
 
@@ -28,6 +30,7 @@ export const ConnectionWidget: React.FC<ConnectionWidgetProps> = ({
   activeConfig,
   connectionStats,
   onToggleConnection,
+  onShowLogs,
   onSelectFastest,
 }) => {
   const theme = THEMES[currentTheme];
@@ -95,6 +98,18 @@ export const ConnectionWidget: React.FC<ConnectionWidgetProps> = ({
           >
             <Power className="w-7 h-7 stroke-[2.5]" />
           </button>
+
+          {/* Logs button (like ShadowRay's گزارشات) */}
+          {onShowLogs && (
+            <button
+              onClick={onShowLogs}
+              className="px-3 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 transition shrink-0"
+              title="گزارشات اتصال"
+            >
+              <FileText className="w-5 h-5 text-yellow-400" />
+              <span className="text-[9px] font-bold">گزارشات</span>
+            </button>
+          )}
 
           {/* Node and Connection Text */}
           <div className="flex-1 min-w-0">
